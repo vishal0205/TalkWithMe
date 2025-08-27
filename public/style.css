@@ -1,0 +1,632 @@
+/* style.css */
+
+:root {
+    /* Dark theme (default) */
+    --bg-primary: #000000;
+    --bg-secondary: rgba(0, 0, 0, 0.7);
+    --bg-tertiary: rgba(30, 30, 30, 0.95);
+    --text-primary: #ffffff;
+    --text-secondary: #d1d5db;
+    --text-muted: #9ca3af;
+    --border-color: rgba(255, 255, 255, 0.2);
+    --border-light: rgba(255, 255, 255, 0.1);
+    --accent-primary: #3b82f6;
+    --accent-hover: #2563eb;
+    --success-color: #10b981;
+    --error-color: #ef4444;
+    --warning-color: #f59e0b;
+    --scrollbar-track: #f1f1f1;
+    --scrollbar-thumb: #888;
+    --scrollbar-thumb-hover: #555;
+}
+
+[data-theme="light"] {
+    /* Light theme */
+    --bg-primary: #f8fafc;
+    --bg-secondary: rgba(255, 255, 255, 0.9);
+    --bg-tertiary: rgba(255, 255, 255, 0.95);
+    --text-primary: #1f2937;
+    --text-secondary: #374151;
+    --text-muted: #6b7280;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --border-light: rgba(0, 0, 0, 0.05);
+    --accent-primary: #3b82f6;
+    --accent-hover: #2563eb;
+    --success-color: #059669;
+    --error-color: #dc2626;
+    --warning-color: #d97706;
+    --scrollbar-track: #e5e7eb;
+    --scrollbar-thumb: #9ca3af;
+    --scrollbar-thumb-hover: #6b7280;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom scrollbar styling for the chat container */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* Theme Toggle Button - Hidden by default, only shown in fullscreen */
+.theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1001;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: none; /* Hidden by default */
+}
+
+/* Show theme toggle only in fullscreen mode */
+.theme-toggle.show-in-fullscreen {
+    display: flex;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+    background: var(--accent-primary);
+}
+
+.theme-toggle svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+}
+
+/* Progress Bar Styles */
+.progress-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--border-light);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-primary), var(--success-color));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    text-align: right;
+}
+
+/* Book Annotation Styles */
+.highlight {
+    background: linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%);
+    color: #1f2937;
+    padding: 2px 0;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+[data-theme="light"] .highlight {
+    background: linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%);
+    color: #1f2937;
+}
+
+.highlight:hover {
+    background: linear-gradient(120deg, #f59e0b 0%, #d97706 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.highlight-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    margin-bottom: 5px;
+}
+
+.highlight:hover .highlight-tooltip {
+    opacity: 1;
+}
+
+.annotation-toolbar {
+    position: absolute;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 1001;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.2s ease;
+    pointer-events: none;
+}
+
+.annotation-toolbar.show {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: all;
+}
+
+.annotation-btn {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.annotation-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.annotation-btn.remove {
+    background: var(--error-color);
+}
+
+.annotation-btn.remove:hover {
+    background: #dc2626;
+}
+
+.annotations-panel {
+    position: fixed;
+    right: -350px;
+    top: 0;
+    width: 350px;
+    height: 100vh;
+    background: var(--bg-tertiary);
+    border-left: 1px solid var(--border-color);
+    z-index: 1002;
+    transition: right 0.3s ease;
+    overflow-y: auto;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.annotations-panel.open {
+    right: 0;
+}
+
+.annotations-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.annotations-header h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.close-annotations {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.close-annotations:hover {
+    background: var(--border-light);
+    color: var(--text-primary);
+}
+
+.annotation-item {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.annotation-item:hover {
+    background: var(--border-light);
+}
+
+.annotation-text {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    background: linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%);
+    color: #1f2937;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+.annotation-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.annotation-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.annotation-action {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.annotation-action:hover {
+    background: var(--border-light);
+    color: var(--text-primary);
+}
+
+.annotation-action.delete:hover {
+    color: var(--error-color);
+}
+
+.annotations-toggle {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1001;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.annotations-toggle:hover {
+    background: var(--accent-hover);
+    transform: scale(1.1);
+}
+
+.annotations-toggle svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Fullscreen Mode Styles */
+.book-viewer-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    background: var(--bg-primary) !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+    box-sizing: border-box !important;
+}
+
+.chat-panel-hidden {
+    display: none !important;
+}
+
+/* Mobile responsive annotations */
+@media (max-width: 768px) {
+    .annotations-panel {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .annotation-toolbar {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .annotation-btn {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .annotations-toggle {
+        bottom: 5rem;
+        right: 1rem;
+    }
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
+    body {
+        padding: 0;
+        margin: 0;
+        overflow-x: hidden;
+    }
+
+    #main-app-container {
+        flex-direction: column;
+        height: 100vh;
+        max-width: 100vw;
+        width: 100vw;
+        padding: 0;
+        gap: 0;
+        margin: 0;
+        overflow-x: hidden;
+    }
+
+    #book-viewer-panel {
+        height: 35vh;
+        width: 100vw;
+        padding: 0.5rem;
+        border-radius: 0;
+        margin: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        box-sizing: border-box;
+    }
+
+    #chat-panel {
+        height: 65vh;
+        width: 100vw;
+        padding: 0.5rem;
+        border-radius: 0;
+        margin: 0;
+        max-width: 100vw;
+        box-sizing: border-box;
+    }
+
+    #book-content-display {
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 0.5rem;
+        height: calc(35vh - 3rem);
+        margin: 0;
+    }
+
+    #chat-container {
+        padding: 0.5rem;
+        height: calc(65vh - 10rem);
+        margin-bottom: 0.5rem;
+    }
+
+    .chat-bubble {
+        max-width: 85%;
+        padding: 0.75rem;
+        margin: 0.5rem 0;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    #book-title {
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    #book-viewer-title {
+        font-size: 1.125rem;
+    }
+
+    /* Input section mobile optimization */
+    #chat-input-section {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        margin: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #user-input {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 16px; /* Prevent zoom on iOS */
+        border-radius: 0.5rem;
+        box-sizing: border-box;
+        margin: 0;
+    }
+
+    #send-button, #voice-button {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 16px;
+        border-radius: 0.5rem;
+        min-height: 48px; /* Touch target size */
+        box-sizing: border-box;
+        margin: 0;
+    }
+
+    /* Voice controls mobile */
+    #voice-controls-container {
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        padding: 0 0.5rem;
+        box-sizing: border-box;
+    }
+
+    #pause-voice-button, #stop-voice-button {
+        width: 100%;
+        padding: 0.75rem;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+
+    /* Fullscreen toggle button */
+    #toggle-fullscreen-btn {
+        padding: 0.5rem;
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Status message mobile */
+    #status-message {
+        font-size: 14px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        word-break: break-word;
+    }
+
+    /* Voice visualizer mobile */
+    #voice-visualizer-container {
+        width: 120px;
+        height: 120px;
+    }
+
+    #voice-visualizer-circle {
+        width: 60px;
+        height: 60px;
+    }
+
+    #voice-visualizer-text {
+        font-size: 0.875rem;
+    }
+
+    /* AI thinking indicator mobile */
+    .ai-thinking-indicator {
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 0.75rem 1rem;
+        font-size: 14px;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+    #main-app-container {
+        height: 100vh;
+    }
+
+    #book-viewer-panel {
+        height: 30vh;
+        padding: 0.5rem;
+    }
+
+    #chat-panel {
+        height: 70vh;
+        padding: 0.5rem;
+    }
+
+    #book-content-display {
+        font-size: 13px;
+        height: calc(30vh - 3.5rem);
+    }
+
+    #chat-container {
+        height: calc(70vh - 11rem);
+        padding: 0.5rem;
+    }
+
+    .chat-bubble {
+        max-width: 90%;
+        padding: 0.625rem;
+        font-size: 13px;
+    }
+
+    #book-title {
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    #book-viewer-title {
+        font-size: 1.125rem;
+    }
+
+    #user-input, #send-button, #voice-button {
+        padding: 0.75rem;
+        font-size: 15px;
+    }
+}
+
+/* Landscape mobile orientation */
+@media (max-width: 768px) and (orientation: landscape) {
+    #main-app-container {
+        flex-direction: row;
+        height: 100vh;
+    }
+
+    #book-viewer-panel {
+        width: 40%;
+        height: 100vh;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: none;
+    }
+
+    #chat-panel {
+        width: 60%;
+        height: 100vh;
+    }
+
+    #book-content-display {
+        height: calc(100vh - 4rem);
+    }
+
+    #chat-container {
+        height: calc(100vh - 12rem);
+    }
+}
+
+

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Book Chat - Home</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* Hide scrollbars for the full-screen canvas */
+            background: #000; /* Ensure black background for stars */
+            font-family: 'Inter', sans-serif;
+            cursor: none; /* Hide default mouse cursor */
+        }
+        canvas {
+            display: block;
+            position: fixed; /* Fix canvas to the viewport */
+            top: 0;
+            left: 0;
+            z-index: -1; /* Place canvas behind other content */
+        }
+        .content-overlay {
+            position: relative;
+            z-index: 1; /* Ensure content is above the canvas */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Make content container take full viewport height */
+            text-align: center;
+            padding: 2rem;
+            color: white; /* Ensure text is visible on the dark background */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Text shadow for readability */
+        }
+
+        /* Auth links container */
+        .auth-links {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 10;
+            display: flex;
+            gap: 1rem;
+        }
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .content-overlay {
+                padding: 1rem;
+            }
+            
+            .auth-links {
+                top: 1rem;
+                right: 1rem;
+                gap: 0.5rem;
+                flex-direction: column;
+            }
+            
+            .auth-links a {
+                padding: 0.5rem 0.75rem;
+                font-size: 14px;
+                text-align: center;
+                min-width: 80px;
+            }
+            
+            h1 {
+                font-size: 2.5rem !important;
+                margin-bottom: 1.5rem !important;
+                line-height: 1.1;
+            }
+            
+            p {
+                font-size: 1.125rem !important;
+                margin-bottom: 2rem !important;
+                padding: 0 0.5rem;
+            }
+            
+            #get-started-button {
+                padding: 0.875rem 2rem !important;
+                font-size: 1.125rem !important;
+                min-height: 48px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .content-overlay {
+                padding: 0.75rem;
+            }
+            
+            .auth-links {
+                top: 0.75rem;
+                right: 0.75rem;
+            }
+            
+            .auth-links a {
+                padding: 0.4rem 0.6rem;
+                font-size: 13px;
+                min-width: 70px;
+            }
+            
+            h1 {
+                font-size: 2rem !important;
+                margin-bottom: 1rem !important;
+            }
+            
+            p {
+                font-size: 1rem !important;
+                margin-bottom: 1.5rem !important;
+            }
+            
+            #get-started-button {
+                padding: 0.75rem 1.5rem !important;
+                font-size: 1rem !important;
+            }
+        }
+        .auth-links a {
+            padding: 0.5rem 1rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        .auth-links a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Basic animation for the text and button */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounceIn {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-30px); }
+            60% { transform: translateY(-15px); }
+        }
+
+        .animate-fade-in-down { animation: fadeInDown 1s ease-out forwards; }
+        .animate-fade-in-up { animation: fadeInUp 1s ease-out forwards 0.5s; }
+        .animate-bounce-in { animation: bounceIn 1.5s ease-out forwards 1s; } /* Adjusted timing */
+
+        /* Styles for the "destroyed" button effect */
+        .destroyed {
+            animation: explode 0.5s forwards;
+            opacity: 0; /* Start hidden */
+            transform: scale(0); /* Start tiny */
+        }
+
+        @keyframes explode {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(0); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="stars"></canvas> <!-- Canvas for starry background -->
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
+        <svg id="sun-icon" class="hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <svg id="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+    </button>
+
+    <div class="auth-links">
+        <a href="/signup">Sign Up</a>
+        <a href="/login">Sign In</a>
+    </div>
+
+    <div class="content-overlay">
+        <h1 class="text-5xl md:text-6xl font-extrabold mb-6 animate-fade-in-down">
+            Your Inner Voice, Elevated by AI.
+        </h1>
+        <p class="text-xl md:text-2xl mb-10 max-w-2xl animate-fade-in-up">
+            Uncover new perspectives, heal old wounds, and chart your course to a happier self.
+            Your conversation, your journey, powered by AI.
+        </p>
+        <button id="get-started-button" class="px-8 py-4 bg-white text-blue-600 font-bold text-xl rounded-full shadow-lg
+                                   hover:bg-gray-100 transform hover:scale-105 transition-all duration-300
+                                   animate-bounce-in">
+            Get Started
+        </button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('stars');
+        const ctx = canvas.getContext('2d');
+        const getStartedButton = document.getElementById('get-started-button');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const stars = [];
+        const meteoroids = [];
+        const missiles = [];
+        const numStars = 200;
+
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 1.5 + 0.5;
+                this.alpha = Math.random() * 0.5 + 0.5;
+                this.alphaChange = Math.random() * 0.05 + 0.02;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                const colors = ['255, 255, 255', '200, 200, 255', '255, 245, 200'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+                gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha})`);
+                gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0) this.x += canvas.width; if (this.x > canvas.width) this.x -= canvas.width;
+                if (this.y < 0) this.y += canvas.height; if (this.y > canvas.height) this.y -= canvas.height;
+                this.alpha += this.alphaChange;
+                if (this.alpha <= 0.5 || this.alpha >= 1) { this.alphaChange = -this.alphaChange; }
+                this.draw();
+            }
+        }
+
+        class Meteoroid {
+            constructor() {
+                this.length = Math.random() * 40 + 20;
+                this.x = Math.random() * canvas.width;
+                this.y = -this.length;
+                this.speed = Math.random() * 3 + 2;
+                this.angle = Math.PI / 4 + (Math.random() * 0.2 - 0.1);
+                this.alpha = 1;
+                const colors = ['255, 255, 255', '200, 200, 255', '255, 245, 200'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            draw() {
+                const gradient = ctx.createLinearGradient(this.x, this.y, this.x + this.length * Math.cos(this.angle), this.y + this.length * Math.sin(this.angle));
+                gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha})`);
+                gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - this.length * Math.cos(this.angle), this.y - this.length * Math.sin(this.angle));
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2; ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+            update() {
+                this.x += this.speed * Math.sin(this.angle); this.y += this.speed * Math.cos(this.angle);
+                this.alpha -= 0.005; this.draw();
+            }
+            isOffScreen() {
+                return this.y > canvas.height + this.length || this.x < -this.length || this.x > canvas.width + this.length || this.alpha <= 0;
+            }
+        }
+
+        class Alien {
+            constructor() {
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2;
+                this.size = 25;
+                this.color = '#00FFFF';
+                this.targetX = this.x;
+                this.targetY = this.y;
+                this.speed = 0.1;
+                this.isShooting = false;
+            }
+            draw() {
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(Math.atan2(this.targetY - this.y, this.targetX - this.x) + Math.PI / 2);
+                ctx.beginPath(); ctx.ellipse(0, 0, this.size * 1.5, this.size * 0.5, 0, 0, Math.PI * 2);
+                ctx.fillStyle = this.color; ctx.shadowColor = this.color; ctx.shadowBlur = 15; ctx.fill();
+                ctx.strokeStyle = 'rgba(0, 200, 200, 0.8)'; ctx.lineWidth = 2; ctx.stroke(); ctx.shadowBlur = 0;
+                ctx.beginPath(); ctx.arc(0, -this.size * 0.3, this.size * 0.6, Math.PI, Math.PI * 2);
+                ctx.fillStyle = 'rgba(100, 200, 255, 0.7)'; ctx.fill();
+                ctx.strokeStyle = 'rgba(0, 200, 200, 0.8)'; ctx.lineWidth = 1; ctx.stroke();
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2;
+                    const lightX = Math.cos(angle) * this.size * 1.3;
+                    const lightY = Math.sin(angle) * this.size * 0.3;
+                    ctx.beginPath(); ctx.arc(lightX, lightY, this.size * 0.1, 0, Math.PI * 2);
+                    ctx.fillStyle = 'white'; ctx.fill();
+                }
+                ctx.restore();
+            }
+            update() {
+                this.x += (this.targetX - this.x) * this.speed; this.y += (this.targetY - this.y) * this.speed;
+                this.draw();
+            }
+            shoot(targetX, targetY) {
+                if (!this.isShooting) {
+                    this.isShooting = true;
+                    missiles.push(new Missile(this.x, this.y + this.size * 0.5, targetX, targetY));
+                }
+            }
+        }
+
+        class Missile {
+            constructor(startX, startY, targetX, targetY) {
+                this.x = startX; this.y = startY; this.targetX = targetX; this.targetY = targetY;
+                this.radius = 5; this.color = 'yellow'; this.speed = 15; this.hit = false;
+                const angle = Math.atan2(targetY - startY, targetX - startX);
+                this.vx = Math.cos(angle) * this.speed; this.vy = Math.sin(angle) * this.speed;
+            }
+            draw() {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color; ctx.shadowColor = 'yellow'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+            }
+            update() {
+                if (this.hit) return;
+                this.x += this.vx; this.y += this.vy;
+                const distance = Math.sqrt((this.x - this.targetX) ** 2 + (this.y - this.targetY) ** 2);
+                if (distance < this.radius + 10) {
+                    this.hit = true;
+                    getStartedButton.classList.add('destroyed');
+                    setTimeout(() => {
+                        window.location.href = window.location.origin + '/upload';
+                    }, 500);
+                }
+                this.draw();
+            }
+            isOffScreen() {
+                return this.hit || this.x < -this.radius || this.x > canvas.width + this.radius || this.y < -this.radius || this.y > canvas.height + this.radius;
+            }
+        }
+
+        for (let i = 0; i < numStars; i++) { stars.push(new Star()); }
+        const alien = new Alien();
+
+        function spawnMeteoroid() {
+            const numToSpawn = [1, 2, 3, 5][Math.floor(Math.random() * 4)];
+            for (let i = 0; i < numToSpawn; i++) {
+                if (meteoroids.length < 15) { meteoroids.push(new Meteoroid()); }
+            }
+            setTimeout(spawnMeteoroid, Math.random() * 4000 + 2000);
+        }
+
+        window.addEventListener('load', () => {
+            spawnMeteoroid();
+            animate();
+        });
+        window.addEventListener('mousemove', (e) => {
+            alien.targetX = e.clientX;
+            alien.targetY = e.clientY;
+        });
+        getStartedButton.addEventListener('click', () => {
+            const rect = getStartedButton.getBoundingClientRect();
+            const buttonCenterX = rect.left + rect.width / 2;
+            const buttonCenterY = rect.top + rect.height / 2;
+            alien.shoot(buttonCenterX, buttonCenterY);
+            getStartedButton.disabled = true;
+            getStartedButton.style.cursor = 'not-allowed';
+        });
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => star.update());
+            for (let i = meteoroids.length - 1; i >= 0; i--) {
+                const meteoroid = meteoroids[i]; meteoroid.update();
+                if (meteoroid.isOffScreen()) { meteoroids.splice(i, 1); }
+            }
+            alien.update();
+            for (let i = missiles.length - 1; i >= 0; i--) {
+                const missile = missiles[i]; missile.update();
+                if (missile.isOffScreen()) { missiles.splice(i, 1); }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            stars.length = 0;
+            for (let i = 0; i < numStars; i++) {
+                stars.push(new Star());
+            }
+            alien.x = canvas.width / 2;
+            alien.y = canvas.height / 2;
+            alien.targetX = alien.x;
+            alien.targetY = alien.y;
+        });
+
+        // Theme Management
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+
+        const initializeTheme = () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcons(savedTheme);
+        };
+
+        const updateThemeIcons = (theme) => {
+            if (theme === 'light') {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            } else {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            }
+        };
+
+        const toggleTheme = () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcons(newTheme);
+        };
+
+        // Initialize theme and add event listener
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTheme();
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleTheme);
+            }
+        });
+
+    </script>
+</body>
+</html>

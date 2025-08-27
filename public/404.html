@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden; /* Hide scrollbars for full-screen canvas */
+            background: #000; /* Ensure black background for stars */
+        }
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1; /* Behind content */
+        }
+    </style>
+    <meta name="robots" content="noindex">
+</head>
+<body class="min-h-screen text-white flex items-center justify-center p-6">
+    <canvas id="stars"></canvas>
+    <main class="text-center max-w-xl">
+        <h1 class="text-6xl font-extrabold tracking-tight">404</h1>
+        <p class="mt-4 text-2xl font-semibold">Page not found</p>
+        <p class="mt-2 text-slate-300">Sorry, the page you are looking for doesn’t exist or has been moved.</p>
+
+        <div class="mt-8 flex items-center justify-center gap-3 flex-wrap">
+            <a href="/" class="px-5 py-3 rounded-full bg-white text-slate-900 font-semibold hover:bg-slate-200 transition">Go to Home</a>
+            <a href="/upload" class="px-5 py-3 rounded-full bg-slate-800 border border-slate-700 hover:bg-slate-700 transition">Go to Upload</a>
+        </div>
+    </main>
+    <script>
+        const canvas = document.getElementById('stars');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const stars = [];
+        const numStars = 200;
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 1.5 + 0.5;
+                this.alpha = Math.random() * 0.5 + 0.5;
+                this.alphaChange = Math.random() * 0.05 + 0.02;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                const colors = ['255, 255, 255', '200, 200, 255', '255, 245, 200'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+                gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha})`);
+                gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0) this.x += canvas.width;
+                if (this.x > canvas.width) this.x -= canvas.width;
+                if (this.y < 0) this.y += canvas.height;
+                if (this.y > canvas.height) this.y -= canvas.height;
+                this.alpha += this.alphaChange;
+                if (this.alpha <= 0.5 || this.alpha >= 1) this.alphaChange = -this.alphaChange;
+                this.draw();
+            }
+        }
+
+        for (let i = 0; i < numStars; i++) stars.push(new Star());
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => star.update());
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            stars.length = 0;
+            for (let i = 0; i < numStars; i++) stars.push(new Star());
+        });
+    </script>
+</body>
+</html>
+
+

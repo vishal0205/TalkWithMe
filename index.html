@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Book Chat</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Link to your custom stylesheet -->
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            /* Ensure body background is black for the starry effect */
+            background: #000;
+        }
+        /* Canvas background for chat app */
+        canvas {
+            display: block;
+            position: fixed; /* Fix canvas to the viewport */
+            top: 0;
+            left: 0;
+            z-index: -1; /* Place canvas behind other content */
+        }
+
+        /* Main chat container styling - now transparent */
+        .chat-container-wrapper {
+            background-color: transparent; /* Make it transparent */
+            color: white; /* Default text color for the wrapper */
+            /* Removed box-shadow here to avoid a box around the whole app */
+        }
+
+        /* Custom chat bubble styling */
+        .chat-bubble {
+            padding: 0.75rem 1rem;
+            border-radius: 1.25rem; /* More rounded corners */
+            max-width: 80%;
+            position: relative;
+            word-wrap: break-word;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Slightly darker shadow for contrast */
+        }
+
+        .chat-bubble.user {
+            background-color: #3B82F6; /* Blue-600 */
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem; /* Sharpen one corner for a unique look */
+        }
+
+        .chat-bubble.ai {
+            background-color: #2D3748; /* Darker gray/blue for AI, blending with space */
+            color: #CBD5E0; /* Lighter text for AI on dark background */
+            margin-right: auto;
+            border-bottom-left-radius: 0.25rem; /* Sharpen one corner */
+        }
+
+        .chat-bubble .sender-label {
+            font-weight: 600;
+            font-size: 0.875rem; /* text-sm */
+            margin-bottom: 0.25rem;
+            opacity: 0.9; /* Slightly more opaque */
+            color: rgba(255,255,255,0.7); /* Lighter label for contrast */
+        }
+        .chat-bubble.ai .sender-label {
+            color: rgba(255,255,255,0.5); /* Even lighter label for AI */
+        }
+
+
+        /* AI thinking indicator animation */
+        .ai-thinking-indicator {
+            background-color: #2D3748; /* Match AI bubble background */
+            color: #CBD5E0; /* Match AI bubble text color */
+            margin-right: auto;
+            border-bottom-left-radius: 0.25rem;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Voice Visualizer Styles */
+        #voice-visualizer-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px; /* Size of the visualizer area */
+            height: 150px;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); /* Glowing effect */
+            z-index: 20; /* Above chat elements */
+            pointer-events: none; /* Allow clicks to pass through */
+        }
+
+        #voice-visualizer-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #00BFFF, #87CEFA); /* Blue sky gradient */
+            animation: expandPulse 1.5s infinite ease-in-out;
+            box-shadow: 0 0 15px rgba(135, 206, 250, 0.8); /* Soft glow */
+        }
+
+        #voice-visualizer-text {
+            color: white;
+            margin-top: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        @keyframes expandPulse {
+            0% { transform: scale(0.8); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0.7; }
+        }
+
+        :root {
+            --book-viewer-bg: rgba(0, 0, 0, 0.6);
+            --book-viewer-fullscreen-bg: rgba(0, 0, 0, 0.95);
+            --book-viewer-text-color: #E0E7FF;
+            --book-viewer-border-color: rgba(255, 255, 255, 0.1);
+            --book-viewer-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        [data-theme="light"] {
+            --book-viewer-bg: rgba(243, 244, 246, 0.95); /* gray-100 with opacity */
+            --book-viewer-fullscreen-bg: rgb(249, 250, 251); /* gray-50 */
+            --book-viewer-text-color: #111827; /* gray-900 */
+            --book-viewer-border-color: rgba(0, 0, 0, 0.1);
+            --book-viewer-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* Book Viewer Specific Styles */
+        .book-viewer-panel {
+            background-color: var(--book-viewer-bg);
+            border: 1px solid var(--book-viewer-border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-y: auto;
+            color: var(--book-viewer-text-color);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            text-align: justify;
+            box-shadow: var(--book-viewer-shadow);
+            flex-shrink: 0; /* Prevent shrinking */
+            width: 45%; /* Take up 45% of the width */
+            transition: width 0.3s ease, height 0.3s ease, position 0.3s ease, top 0.3s ease, left 0.3s ease, transform 0.3s ease, z-index 0.3s ease;
+        }
+        .book-viewer-panel p {
+            margin-bottom: 0.5rem;
+        }
+        .book-viewer-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        .book-viewer-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        .book-viewer-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        .book-viewer-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Fullscreen mode for book viewer - Transform-based approach */
+        .book-viewer-panel {
+            transform-origin: center center;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            will-change: transform;
+        }
+        
+        .book-viewer-fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 1000 !important;
+            margin: 0 !important;
+            padding: 1rem !important;
+            border-radius: 0 !important;
+            background-color: var(--book-viewer-fullscreen-bg) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            transform: translateZ(0) !important;
+        }
+
+        /* Fullscreen content adjustments */
+        .book-viewer-fullscreen #book-content-display {
+            height: calc(100vh - 5rem) !important;
+            padding: 1rem !important;
+            font-size: 1rem !important;
+            line-height: 1.6 !important;
+            max-width: none !important;
+        }
+
+        .book-viewer-fullscreen .flex.justify-between {
+            margin-bottom: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+
+        .book-viewer-fullscreen #book-viewer-title {
+            font-size: 1.5rem !important;
+        }
+
+        .book-viewer-fullscreen #toggle-fullscreen-btn {
+            min-height: 44px !important;
+            min-width: 44px !important;
+            padding: 0.75rem !important;
+        }
+
+        /* Hide chat panel when book viewer is fullscreen */
+        #chat-panel {
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            will-change: transform, opacity;
+        }
+        
+        .chat-panel-hidden {
+            opacity: 0 !important;
+            transform: translateX(100%) translateZ(0) !important;
+            pointer-events: none !important;
+        }
+
+        /* Mobile fullscreen optimizations */
+        @media (max-width: 768px) {
+            .book-viewer-fullscreen {
+                padding: 0.75rem !important;
+            }
+            
+            .book-viewer-fullscreen #book-content-display {
+                height: calc(100vh - 4rem) !important;
+                padding: 0.75rem !important;
+                font-size: 0.95rem !important;
+                line-height: 1.5 !important;
+            }
+            
+            .book-viewer-fullscreen #book-viewer-title {
+                font-size: 1.25rem !important;
+            }
+            
+            .book-viewer-fullscreen .flex.justify-between {
+                margin-bottom: 0.75rem !important;
+                padding-bottom: 0.75rem !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .book-viewer-fullscreen {
+                padding: 0.5rem !important;
+            }
+            
+            .book-viewer-fullscreen #book-content-display {
+                height: calc(100vh - 3.5rem) !important;
+                padding: 0.5rem !important;
+                font-size: 0.9rem !important;
+            }
+            
+            .book-viewer-fullscreen #book-viewer-title {
+                font-size: 1.125rem !important;
+            }
+        }
+
+
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 lg:p-4 p-0">
+    <canvas id="stars"></canvas> <!-- Canvas for starry background -->
+
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
+        <svg id="sun-icon" class="hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <svg id="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+    </button>
+
+    <!-- Annotation Toolbar (hidden by default) -->
+    <div id="annotation-toolbar" class="annotation-toolbar">
+        <button id="highlight-btn" class="annotation-btn">Highlight</button>
+        <button id="remove-highlight-btn" class="annotation-btn remove">Remove</button>
+    </div>
+
+    <!-- Annotations Panel -->
+    <div id="annotations-panel" class="annotations-panel">
+        <div class="annotations-header">
+            <h3>My Highlights</h3>
+            <button id="close-annotations" class="close-annotations">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div id="annotations-list" class="annotations-list">
+            <!-- Annotations will be populated here -->
+        </div>
+    </div>
+
+    <!-- Annotations Toggle Button -->
+    <button id="annotations-toggle" class="annotations-toggle" title="View highlights">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2M9 10h6m-6 4h6"></path>
+        </svg>
+    </button>
+
+    <!-- Main application container, responsive layout -->
+    <div id="main-app-container" class="flex w-full max-w-6xl h-[90vh] lg:h-[90vh] h-screen relative z-10 gap-4 lg:flex-row flex-col lg:gap-4 gap-0">
+        <!-- Book Viewer Panel (Left Side) -->
+        <div id="book-viewer-panel" class="book-viewer-panel flex-grow">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                <button id="toggle-fullscreen-btn" class="text-gray-400 hover:text-white transition-colors duration-200 p-1 rounded">
+                    <!-- Maximize/Minimize Icon (SVG) -->
+                    <svg id="maximize-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4M4 20l5-5m11 1v4m0 0h-4m4 0l-5-5"></path>
+                    </svg>
+                    <svg id="minimize-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H4m0 0v4m0-4l-5 5m11 1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4M4 20l5-5m11 1v4m0 0h-4m4 0l-5-5"></path>
+                    </svg>
+                </button>
+
+                <h3 id="book-viewer-title" class="text-xl font-bold text-white text-center flex-grow">
+                    Book Content
+                </h3>
+            </div>
+            
+            <!-- Reading Progress Bar -->
+            <div id="progress-container" class="progress-container hidden">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-text" class="progress-text">0% read</div>
+            </div>
+            
+            <!-- Book content display area -->
+            <div id="book-content-display" class="h-full overflow-y-auto custom-scrollbar">
+                <!-- Book text will be loaded here -->
+                <p class="text-gray-400 text-center">Upload a book to see its content here.</p>
+            </div>
+        </div>
+
+        <!-- Chat Interface Panel (Right Side) -->
+        <div id="chat-panel" class="chat-container-wrapper rounded-xl p-6 w-full max-w-2xl flex flex-col relative flex-grow lg:w-auto">
+            <!-- Book Title Display (Top of Chat) -->
+            <h2 id="book-title" class="text-2xl font-bold text-white mb-6 text-center">
+                AI Book Chat
+            </h2>
+
+            <!-- Message / Status Area - Now only for errors -->
+            <div id="status-message" class="hidden bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-md text-sm mb-4">
+                <!-- Error messages will be displayed here -->
+            </div>
+
+            <!-- Conversation Display -->
+            <div id="chat-container" class="flex-grow overflow-y-auto border border-gray-700 rounded-lg p-4 mb-4 bg-transparent custom-scrollbar">
+                <p id="initial-chat-message" class="text-center text-gray-400">
+                    AI is thinking...
+                </p>
+                <!-- Chat messages will be appended here -->
+            </div>
+
+            <!-- Voice Controls for AI speaking -->
+            <div id="voice-controls-container" class="flex justify-end space-x-2 mb-4 hidden">
+                <button
+                    id="pause-voice-button"
+                    class="px-4 py-2 rounded-full text-white font-semibold transition-colors duration-200
+                        bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    Pause Voice
+                </button>
+                <button
+                    id="stop-voice-button"
+                    class="px-4 py-2 rounded-full text-white font-semibold transition-colors duration-200
+                        bg-red-500 hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    Stop Voice
+                </button>
+            </div>
+
+            <!-- Chat Input Section -->
+            <div id="chat-input-section" class="flex items-center space-x-3 hidden lg:flex-row flex-col lg:space-x-3 lg:space-y-0 space-y-3 space-x-0">
+                <input
+                    type="text"
+                    id="user-input"
+                    placeholder="Type your message or use voice..."
+                    class="flex-grow px-4 py-2 border border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-white placeholder-gray-400"
+                />
+                <button
+                    id="send-button"
+                    class="px-5 py-2 rounded-full text-white font-semibold transition-colors duration-200
+                        bg-green-600 hover:bg-green-700"
+                >
+                    Send
+                </button>
+                <button
+                    id="voice-button"
+                    class="px-5 py-2 rounded-full text-white font-semibold transition-colors duration-200 flex items-center justify-center
+                        bg-purple-600 hover:bg-purple-700"
+                >
+                    <svg id="mic-icon-static" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0 5 5 0 01-5 5v1.07l.38.38a1 1 0 01-1.41 1.41L10 14.41l-.38.38a1 1 0 01-1.41-1.41L9 14.93V13a5 5 0 01-5-5 1 1 0 10-2 0 7.001 7.001 0 0010 6.93V17a1 1 0 102 0v-2.07z" clip-rule="evenodd"></path>
+                    </svg>
+                    <svg id="mic-icon-pulse" class="w-5 h-5 hidden animate-pulse" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0 5 5 0 01-5 5v1.07l.38.38a1 1 0 01-1.41 1.41L10 14.41l-.38.38a1 1 0 01-1.41-1.41L9 14.93V13a5 5 0 01-5-5 1 1 0 10-2 0 7.001 7.001 0 0010 6.93V17a1 1 0 102 0v-2.07z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span id="voice-button-text" class="ml-2">Talk</span>
+                </button>
+            </div>
+
+            <!-- AI Thinking Indicator (Newly Added) -->
+            <div class="ai-thinking-indicator hidden fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 z-50">
+                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>AI is thinking...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Visualizer Overlay -->
+    <div id="voice-visualizer-container" class="hidden">
+        <div id="voice-visualizer-circle"></div>
+        <div id="voice-visualizer-text"></div>
+    </div>
+
+
+
+    <!-- Link to your custom JavaScript file -->
+    <script src="/script.js"></script>
+    <script>
+        // --- Canvas Background Animation (Copied from home.html) ---
+        const canvas = document.getElementById('stars');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const stars = [];
+        const meteoroids = [];
+        const numStars = 200;
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 1.5 + 0.5;
+                this.alpha = Math.random() * 0.5 + 0.5;
+                this.alphaChange = Math.random() * 0.05 + 0.02;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                const colors = ['255, 255, 255', '200, 200, 255', '255, 245, 200'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+                gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha})`);
+                gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0) this.x += canvas.width; if (this.x > canvas.width) this.x -= canvas.width;
+                if (this.y < 0) this.y += canvas.height; if (this.y > canvas.height) this.y -= canvas.height;
+                this.alpha += this.alphaChange;
+                if (this.alpha <= 0.5 || this.alpha >= 1) { this.alphaChange = -this.alphaChange; }
+                this.draw();
+            }
+        }
+
+        class Meteoroid {
+            constructor() {
+                this.length = Math.random() * 40 + 20;
+                this.x = Math.random() * canvas.width;
+                this.y = -this.length;
+                this.speed = Math.random() * 3 + 2;
+                this.angle = Math.PI / 4 + (Math.random() * 0.2 - 0.1);
+                this.alpha = 1;
+                const colors = ['255, 255, 255', '200, 200, 255', '255, 245, 200'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            draw() {
+                const gradient = ctx.createLinearGradient(this.x, this.y, this.x + this.length * Math.cos(this.angle), this.y + this.length * Math.sin(this.angle));
+                gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha})`);
+                gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - this.length * Math.cos(this.angle), this.y - this.length * Math.sin(this.angle));
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2; ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+            update() {
+                this.x += this.speed * Math.sin(this.angle); this.y += this.speed * Math.cos(this.angle);
+                this.alpha -= 0.005; this.draw();
+            }
+            isOffScreen() {
+                return this.y > canvas.height + this.length || this.x < -this.length || this.x > canvas.width + this.length || this.alpha <= 0;
+            }
+        }
+
+        for (let i = 0; i < numStars; i++) { stars.push(new Star()); }
+
+        function spawnMeteoroid() {
+            const numToSpawn = [1, 2, 3, 5][Math.floor(Math.random() * 4)];
+            for (let i = 0; i < numToSpawn; i++) {
+                if (meteoroids.length < 15) { meteoroids.push(new Meteoroid()); }
+            }
+            setTimeout(spawnMeteoroid, Math.random() * 4000 + 2000);
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => star.update());
+            for (let i = meteoroids.length - 1; i >= 0; i--) {
+                const meteoroid = meteoroids[i]; meteoroid.update();
+                if (meteoroid.isOffScreen()) { meteoroids.splice(i, 1); }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            stars.length = 0; for (let i = 0; i < numStars; i++) { stars.push(new Star()); }
+        });
+
+        window.addEventListener('load', () => {
+            spawnMeteoroid();
+            animate();
+        });
+        // --- End Canvas Background Animation ---
+    </script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Book Chat - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0; /* Ensure no default margin */
+            overflow: hidden; /* Hide scrollbars for the full-screen canvas */
+            background: #000; /* Ensure black background for stars */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+        }
+        canvas {
+            display: block;
+            position: fixed; /* Fix canvas to the viewport */
+            top: 0;
+            left: 0;
+            z-index: -1; /* Place canvas behind other content */
+        }
+        .form-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            z-index: 1;
+            margin: 1rem;
+        }
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+            
+            .form-container {
+                padding: 1.5rem;
+                margin: 0.5rem;
+                max-width: 100%;
+                border-radius: 0.75rem;
+            }
+            
+            h2 {
+                font-size: 1.75rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            input[type="email"],
+            input[type="password"] {
+                padding: 0.875rem;
+                font-size: 16px; /* Prevent zoom on iOS */
+                border-radius: 0.75rem;
+            }
+            
+            button {
+                padding: 0.875rem 1.5rem;
+                font-size: 16px;
+                min-height: 48px; /* Touch target size */
+                border-radius: 0.75rem;
+            }
+            
+            .error-message, .success-message {
+                padding: 0.75rem;
+                font-size: 14px;
+                word-break: break-word;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .form-container {
+                padding: 1rem;
+                margin: 0.25rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            input[type="email"],
+            input[type="password"] {
+                padding: 0.75rem;
+                font-size: 15px;
+            }
+            
+            button {
+                padding: 0.75rem 1.25rem;
+                font-size: 15px;
+            }
+        }
+        input[type="email"],
+        input[type="password"] {
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            outline: none;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            border-color: #00BFFF; /* Deep Sky Blue */
+            background-color: rgba(255, 255, 255, 0.25);
+        }
+        button {
+            background-color: #4299e1; /* Blue-500 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        button:hover {
+            background-color: #3182ce; /* Blue-600 */
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background-color: #6B7280; /* Gray-500 */
+            cursor: not-allowed;
+        }
+        .error-message {
+            color: #FC8181; /* Red-300 */
+            background-color: rgba(252, 129, 129, 0.1);
+            border: 1px solid #FC8181;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+        .success-message {
+            color: #68D391; /* Green-300 */
+            background-color: rgba(104, 211, 145, 0.1);
+            border: 1px solid #68D391;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="stars"></canvas> <!-- Canvas for starry background -->
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
+        <svg id="sun-icon" class="hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <svg id="moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+    </button>
+
+    <div class="form-container">
+        <h2 class="text-3xl font-bold text-center mb-6">Login</h2>
+        <div id="status-message" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
+
+        <form id="login-form" class="flex flex-col space-y-4">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <input type="email" id="email" name="email" placeholder="your@example.com" required class="w-full">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                <input type="password" id="password" name="password" placeholder="********" required class="w-full">
+            </div>
+            <button type="submit" id="login-button" class="w-full">Login</button>
+        </form>
+        <p class="text-center text-gray-400 mt-4">
+            Don't have an account? <a href="/signup" class="text-blue-400 hover:underline">Sign Up</a>
+        </p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('stars');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size to fill window
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Arrays to store stars and meteoroids
+        const stars = [];
+        const meteoroids = [];
+        const numStars = 200;
+
+        // Star class (copied from home.html)
+        class Star {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 1.5 + 0.5;
+                this.alpha = Math.random() * 0.5 + 0.5;
+                this.alphaChange = Math.random() * 0.05 + 0.02;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                const colors = ['255, 255, 255', '200, 200, 255', '255, 245, 200'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+                gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha})`);
+                gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0) this.x += canvas.width; if (this.x > canvas.width) this.x -= canvas.width;
+                if (this.y < 0) this.y += canvas.height; if (this.y > canvas.height) this.y -= canvas.height;
+                this.alpha += this.alphaChange;
+                if (this.alpha <= 0.5 || this.alpha >= 1) { this.alphaChange = -this.alphaChange; }
+                this.draw();
+            }
+        }
+
+        // Meteoroid class (copied from home.html)
+        class Meteoroid {
+            constructor() {
+                this.length = Math.random() * 40 + 20;
+                this.x = Math.random() * canvas.width;
+                this.y = -this.length;
+                this.speed = Math.random() * 3 + 2;
+                this.angle = Math.PI / 4 + (Math.random() * 0.2 - 0.1);
+                this.alpha = 1;
+                const colors = ['255, 255, 255', '200, 200, 255', '255, 245, 200'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            draw() {
+                const gradient = ctx.createLinearGradient(this.x, this.y, this.x + this.length * Math.cos(this.angle), this.y + this.length * Math.sin(this.angle));
+                gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha})`);
+                gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - this.length * Math.cos(this.angle), this.y - this.length * Math.sin(this.angle));
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2; ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+            update() {
+                this.x += this.speed * Math.sin(this.angle); this.y += this.speed * Math.cos(this.angle);
+                this.alpha -= 0.005; this.draw();
+            }
+            isOffScreen() {
+                return this.y > canvas.height + this.length || this.x < -this.length || this.x > canvas.width + this.length || this.alpha <= 0;
+            }
+        }
+
+        for (let i = 0; i < numStars; i++) { stars.push(new Star()); }
+
+        function spawnMeteoroid() {
+            const numToSpawn = [1, 2, 3, 5][Math.floor(Math.random() * 4)];
+            for (let i = 0; i < numToSpawn; i++) {
+                if (meteoroids.length < 15) { meteoroids.push(new Meteoroid()); }
+            }
+            setTimeout(spawnMeteoroid, Math.random() * 4000 + 2000);
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => star.update());
+            for (let i = meteoroids.length - 1; i >= 0; i--) {
+                const meteoroid = meteoroids[i]; meteoroid.update();
+                if (meteoroid.isOffScreen()) { meteoroids.splice(i, 1); }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            stars.length = 0; for (let i = 0; i < numStars; i++) { stars.push(new Star()); }
+        });
+
+        window.addEventListener('load', () => {
+            spawnMeteoroid();
+            animate();
+        });
+
+        // --- Login Form Logic ---
+        const loginForm = document.getElementById('login-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginButton = document.getElementById('login-button');
+        const statusMessageDiv = document.getElementById('status-message');
+
+        const displayStatusMessage = (message, type) => {
+            statusMessageDiv.textContent = message;
+            statusMessageDiv.classList.remove('hidden', 'error-message', 'success-message', 'info-message');
+            if (type === 'error') {
+                statusMessageDiv.classList.add('error-message');
+            } else if (type === 'success') {
+                statusMessageDiv.classList.add('success-message');
+            } else if (type === 'info') {
+                statusMessageDiv.classList.add('info-message'); // Add a class for info messages if needed
+            }
+            statusMessageDiv.classList.add('block');
+        };
+
+        // Check for error parameter in URL on page load
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            const signupSuccess = urlParams.get('signup_success');
+
+            if (error === 'not_logged_in') {
+                displayStatusMessage('Please log in to access that page.', 'error');
+            } else if (signupSuccess === 'true') {
+                displayStatusMessage('Signup successful! Please log in.', 'success');
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loginButton.disabled = true;
+            displayStatusMessage('Logging in...', 'info');
+
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayStatusMessage(data.message, 'success');
+                    // Redirect to the upload page after successful login
+                    window.location.href = data.redirectTo;
+                } else {
+                    displayStatusMessage(data.error || 'Login failed. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Login fetch error:', error);
+                displayStatusMessage('Network error or server unavailable. Please try again.', 'error');
+            } finally {
+                loginButton.disabled = false;
+            }
+        });
+
+        // Theme Management
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+
+        const initializeTheme = () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcons(savedTheme);
+        };
+
+        const updateThemeIcons = (theme) => {
+            if (theme === 'light') {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            } else {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            }
+        };
+
+        const toggleTheme = () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcons(newTheme);
+        };
+
+        // Initialize theme
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTheme();
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleTheme);
+            }
+        });
+    </script>
+</body>
+</html>

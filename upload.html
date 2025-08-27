@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Book Chat - Upload</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; /* Ensure no default margin */
+            overflow-x: hidden; /* Hide horizontal scrollbar */
+            background: #000; /* Ensure black background for stars */
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+            padding: 1rem; /* Add some padding for smaller screens */
+        }
+        canvas {
+            display: block;
+            position: fixed; /* Fix canvas to the viewport */
+            top: 0;
+            left: 0;
+            z-index: -1; /* Place canvas behind other content */
+        }
+        .main-container {
+            position: relative; /* Ensure it respects z-index */
+            z-index: 1; /* Keep content above canvas */
+            background-color: rgba(0, 0, 0, 0.7); /* Dark, semi-transparent background */
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 800px; /* Wider container to accommodate two columns */
+            display: flex;
+            flex-direction: column; /* Default to column for small screens */
+            gap: 2.5rem; /* Gap between sections */
+        }
+
+        @media (min-width: 768px) { /* Medium screens and up */
+            .main-container {
+                flex-direction: row; /* Two columns on larger screens */
+            }
+        }
+
+        .upload-section, .books-section {
+            flex: 1; /* Both sections take equal width */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            outline: none;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+        input[type="file"]::file-selector-button {
+            background-color: #6B21A8; /* Purple-700 */
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background-color: #581C87; /* Purple-800 */
+        }
+        button {
+            background-color: #4299e1; /* Blue-500 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        button:hover {
+            background-color: #3182ce; /* Blue-600 */
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background-color: #6B7280; /* Gray-500 */
+            cursor: not-allowed;
+        }
+        .error-message {
+            color: #FC8181; /* Red-300 */
+            background-color: rgba(252, 129, 129, 0.1);
+            border: 1px solid #FC8181;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+        .success-message {
+            color: #68D391; /* Green-300 */
+            background-color: rgba(104, 211, 145, 0.1);
+            border: 1px solid #68D391;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+        .info-message {
+            color: #90CDF4; /* Blue-300 */
+            background-color: rgba(144, 205, 244, 0.1);
+            border: 1px solid #90CDF4;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+
+        /* Book list specific styles */
+        .book-list-item {
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .book-list-item:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        .book-list-item .book-title {
+            font-weight: 600;
+            color: #E0E7FF; /* Light blue text */
+            flex-grow: 1;
+            text-align: left;
+            margin-right: 1rem;
+        }
+        .book-list-item .actions button {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            border-radius: 0.375rem;
+            margin-left: 0.5rem;
+            font-weight: normal;
+        }
+        .book-list-item .actions .chat-btn {
+            background-color: #10B981; /* Green-500 */
+        }
+        .book-list-item .actions .chat-btn:hover {
+            background-color: #059669; /* Green-600 */
+        }
+        .book-list-item .actions .delete-btn {
+            background-color: #EF4444; /* Red-500 */
+        }
+        .book-list-item .actions .delete-btn:hover {
+            background-color: #DC2626; /* Red-600 */
+        }
+        .logout-button {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            padding: 0.5rem 1rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+        .logout-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+                overflow-y: auto;
+            }
+            
+            .logout-button {
+                top: 1rem;
+                right: 1rem;
+                padding: 0.5rem 0.75rem;
+                font-size: 14px;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .main-container {
+                padding: 1.5rem;
+                margin: 0.5rem 0;
+                gap: 2rem;
+                max-width: 100%;
+            }
+            
+            .upload-section h2,
+            .books-section h2 {
+                font-size: 1.75rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .upload-section .bg-white,
+            .books-section #user-books-list {
+                max-width: 100%;
+            }
+            
+            input[type="file"] {
+                padding: 0.875rem;
+                font-size: 16px;
+                border-radius: 0.75rem;
+            }
+            
+            button {
+                padding: 0.875rem 1.5rem;
+                font-size: 16px;
+                min-height: 48px;
+                border-radius: 0.75rem;
+            }
+            
+            .book-list-item {
+                padding: 0.875rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .book-list-item .book-title {
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+                text-align: left;
+                width: 100%;
+            }
+            
+            .book-list-item .actions {
+                display: flex;
+                gap: 0.5rem;
+                width: 100%;
+            }
+            
+            .book-list-item .actions button {
+                flex: 1;
+                padding: 0.75rem;
+                font-size: 14px;
+                margin-left: 0;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 0.25rem;
+            }
+            
+            .logout-button {
+                top: 0.75rem;
+                right: 0.75rem;
+                padding: 0.4rem 0.6rem;
+                font-size: 13px;
+            }
+            
+            .main-container {
+                padding: 1rem;
+                gap: 1.5rem;
+            }
+            
+            .upload-section h2,
+            .books-section h2 {
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            input[type="file"] {
+                padding: 0.75rem;
+                font-size: 15px;
+            }
+            
+            button {
+                padding: 0.75rem 1.25rem;
+                font-size: 15px;
+            }
+            
+            .book-list-item {
+                padding: 0.75rem;
+            }
+            
+            .book-list-item .actions button {
+                padding: 0.625rem;
+                font-size: 13px;
+            }
+        }
+
+        /* Custom Delete Confirmation Popup */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .popup-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .popup-content {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .popup-overlay.show .popup-content {
+            transform: scale(1);
+        }
+
+        .popup-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .popup-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            min-width: 80px;
+        }
+
+        .popup-btn-yes {
+            background: #ef4444;
+            color: white;
+        }
+
+        .popup-btn-yes:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .popup-btn-no {
+            background: #374151;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .popup-btn-no:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        /* Mobile responsive popup */
+        @media (max-width: 480px) {
+            .popup-content {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            .popup-title {
+                font-size: 1.125rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .popup-buttons {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .popup-btn {
+                width: 100%;
+                padding: 0.875rem;
+                min-height: 48px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="stars"></canvas> <!-- Canvas for starry background -->
+
+    <a href="/logout" class="logout-button">Logout</a>
+
+    <div class="main-container">
+        <div class="upload-section">
+            <h2 class="text-3xl font-bold mb-6">Upload New Book</h2>
+            <div id="status-message" class="hidden mb-4 p-3 rounded-lg text-sm w-full max-w-md"></div>
+
+            <div class="bg-white bg-opacity-10 rounded-xl p-6 w-full max-w-md flex flex-col items-center shadow-lg border border-gray-700">
+                <label for="book-upload" class="block text-white text-lg font-semibold mb-4">
+                    Select a Text (.txt) or PDF (.pdf) File
+                </label>
+                <input
+                    type="file"
+                    id="book-upload"
+                    accept=".txt,.pdf"
+                    class="mb-4 w-full"
+                />
+                <p id="selected-file-name" class="text-sm text-gray-200 mb-4"></p>
+
+                <button
+                    id="upload-button"
+                    class="px-8 py-3 rounded-full text-white font-bold text-xl transition-colors duration-200
+                        bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center"
+                    disabled
+                >
+                    <span id="button-text">Analyze & Upload</span>
+                    <div id="loading-spinner" class="loading-spinner hidden ml-2"></div>
+                </button>
+            </div>
+        </div>
+
+        <div class="books-section">
+            <h2 class="text-3xl font-bold mb-6">Your Books (Max 5)</h2>
+            <div id="user-books-list" class="w-full max-w-md">
+                <!-- Books will be loaded here -->
+                <p id="no-books-message" class="text-gray-400 text-center">No books uploaded yet.</p>
+            </div>
+            <p id="book-limit-message" class="text-gray-400 text-sm mt-4 hidden">You have uploaded 0 of 5 books.</p>
+        </div>
+    </div>
+
+    <!-- Custom Delete Confirmation Popup -->
+    <div id="delete-popup" class="popup-overlay">
+        <div class="popup-content">
+            <div class="popup-title">Are you sure you want to delete this book?</div>
+            <div class="popup-buttons">
+                <button id="popup-yes-btn" class="popup-btn popup-btn-yes">Yes</button>
+                <button id="popup-no-btn" class="popup-btn popup-btn-no">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/upload.js"></script>
+    <script>
+        // --- Canvas Background Animation (Copied from home.html) ---
+        const canvas = document.getElementById('stars');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const stars = [];
+        const meteoroids = [];
+        const numStars = 200;
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 1.5 + 0.5;
+                this.alpha = Math.random() * 0.5 + 0.5;
+                this.alphaChange = Math.random() * 0.05 + 0.02;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                const colors = ['255, 255, 255', '200, 200, 255', '255, 245, 200'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+                gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha})`);
+                gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0) this.x += canvas.width; if (this.x > canvas.width) this.x -= canvas.width;
+                if (this.y < 0) this.y += canvas.height; if (this.y > canvas.height) this.y -= canvas.height;
+                this.alpha += this.alphaChange;
+                if (this.alpha <= 0.5 || this.alpha >= 1) { this.alphaChange = -this.alphaChange; }
+                this.draw();
+            }
+        }
+
+        class Meteoroid {
+            constructor() {
+                this.length = Math.random() * 40 + 20;
+                this.x = Math.random() * canvas.width;
+                this.y = -this.length;
+                this.speed = Math.random() * 3 + 2;
+                this.angle = Math.PI / 4 + (Math.random() * 0.2 - 0.1);
+                this.alpha = 1;
+                const colors = ['255, 255, 255', '200, 200, 255', '255, 245, 200'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            draw() {
+                const gradient = ctx.createLinearGradient(this.x, this.y, this.x + this.length * Math.cos(this.angle), this.y + this.length * Math.sin(this.angle));
+                gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha})`);
+                gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - this.length * Math.cos(this.angle), this.y - this.length * Math.sin(this.angle));
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2; ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+            update() {
+                this.x += this.speed * Math.sin(this.angle); this.y += this.speed * Math.cos(this.angle);
+                this.alpha -= 0.005; this.draw();
+            }
+            isOffScreen() {
+                return this.y > canvas.height + this.length || this.x < -this.length || this.x > canvas.width + this.length || this.alpha <= 0;
+            }
+        }
+
+        for (let i = 0; i < numStars; i++) { stars.push(new Star()); }
+
+        function spawnMeteoroid() {
+            const numToSpawn = [1, 2, 3, 5][Math.floor(Math.random() * 4)];
+            for (let i = 0; i < numToSpawn; i++) {
+                if (meteoroids.length < 15) { meteoroids.push(new Meteoroid()); }
+            }
+            setTimeout(spawnMeteoroid, Math.random() * 4000 + 2000);
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => star.update());
+            for (let i = meteoroids.length - 1; i >= 0; i--) {
+                const meteoroid = meteoroids[i]; meteoroid.update();
+                if (meteoroid.isOffScreen()) { meteoroids.splice(i, 1); }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            stars.length = 0; for (let i = 0; i < numStars; i++) { stars.push(new Star()); }
+        });
+
+        window.addEventListener('load', () => {
+            spawnMeteoroid();
+            animate();
+        });
+
+    </script>
+</body>
+</html>
