@@ -9,6 +9,7 @@ import User from './models/User.js';
 import Book from './models/Book.js';
 import Chat from './models/Chat.js';
 import Annotation from './models/Annotation.js';
+import cors from 'cors';
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fileUpload from 'express-fileupload';
@@ -18,9 +19,11 @@ import { fileURLToPath } from 'url';
 
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-pdfjsLib.GlobalWorkerOptions.workerSrc = require('pdfjs-dist/legacy/build/pdf.worker.js');
 
+// Initialize PDF.js
+const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+const pdfjsWorker = require('pdfjs-dist/legacy/build/pdf.worker.js');
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 // const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
 // pdfjsLib.GlobalWorkerOptions.workerSrc = require('pdfjs-dist/legacy/build/pdf.worker.js');
 
@@ -47,6 +50,10 @@ const textModels = [
 const getTextModelInstance = (modelName) => genAI.getGenerativeModel({ model: modelName });
 const ttsModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-tts" });
 
+app.use(cors({
+  origin: true,              // allow same-origin
+  credentials: true          // allow cookies/sessions
+}));
 
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
@@ -68,13 +75,11 @@ app.use(session({
         ttl: 24 * 60 * 60
     }),
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Lax'
-    }
-}));
-
+  maxAge: 1000 * 60 * 60 * 24,
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax'  // 🔥
+}}));
 
 app.use(passport.initialize());
 app.use(passport.session());
