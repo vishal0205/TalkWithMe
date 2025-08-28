@@ -16,16 +16,19 @@ import fileUpload from 'express-fileupload';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+// Disable worker to use main thread
+import pdfjsWorker from 'pdfjs-dist/legacy/build/pdf.worker.js';
 
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-// Initialize PDF.js
+// Initialize PDF.js with Node.js compatibility
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-const pdfjsWorker = require('pdfjs-dist/legacy/build/pdf.worker.js');
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-// const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-// pdfjsLib.GlobalWorkerOptions.workerSrc = require('pdfjs-dist/legacy/build/pdf.worker.js');
+// Configure the workerSrc to null for Node.js environment
+pdfjsLib.GlobalWorkerOptions.workerSrc = null;
+
+
+
 
 dotenv.config();
 
