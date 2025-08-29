@@ -68,21 +68,52 @@ app.use(fileUpload({
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 
+// app.use(session({
+//     secret: process.env.SESSION_SECRET || 'supersecretkey',
+//     resave: false,
+//     saveUninitialized: false,
+//     store: MongoStore.create({
+//         mongoUrl: MONGO_URI,
+//         collectionName: 'sessions',
+//         ttl: 24 * 60 * 60
+//     }),
+//     cookie: {
+//   maxAge: 1000 * 60 * 60 * 24,
+//   httpOnly: true,
+//   secure: process.env.NODE_ENV === 'production',
+//   sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax'  
+// }}));
+
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'supersecretkey',
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: MONGO_URI,
-        collectionName: 'sessions',
-        ttl: 24 * 60 * 60
-    }),
-    cookie: {
+  secret: process.env.SESSION_SECRET || 'supersecretkey',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: MONGO_URI,
+    collectionName: 'sessions',
+    ttl: 24 * 60 * 60
+  }),
+
+  // this is for local development with HTTP
+//   In production with HTTPS, use the settings below and ensure your site is served over HTTPS
+//   cookie: {
+//     maxAge: 1000 * 60 * 60 * 24,
+//     httpOnly: true,
+//     // The critical part:
+//     secure: false,      // For localhost HTTP, must be false!
+//     sameSite: 'Lax'     // For localhost testing and most HTTPS deployments
+//   }
+
+// this is for production with HTTPS
+
+  cookie: {
   maxAge: 1000 * 60 * 60 * 24,
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax'  // 🔥
-}}));
+  secure: true,         // Must be true for HTTPS!
+  sameSite: 'None'      // Must be None for cross-origin cookies
+}
+}));
+
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -121,7 +152,6 @@ const ensureAuthenticated = (req, res, next) => {
         return next();
     }
     
-    // Check if this is an AJAX request
     if (req.xhr || req.headers.accept.indexOf('json') > -1) {
         return res.status(401).json({ error: 'Authentication required' });
     }

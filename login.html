@@ -326,6 +326,14 @@
             }
         });
 
+        const toggleTheme = () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcons(newTheme);
+        };
+
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             loginButton.disabled = true;
@@ -339,10 +347,8 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
-                credentials: 'include'   // 🔥 added
-            });
-
-
+                credentials: 'include'  
+              });
                 const data = await response.json();
 
                 if (response.ok) {
@@ -380,16 +386,6 @@
                 moonIcon.classList.add('hidden');
             }
         };
-
-        const toggleTheme = () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcons(newTheme);
-        };
-
         // Initialize theme
         document.addEventListener('DOMContentLoaded', () => {
             initializeTheme();
