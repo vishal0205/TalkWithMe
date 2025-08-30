@@ -53,10 +53,14 @@ const textModels = [
 const getTextModelInstance = (modelName) => genAI.getGenerativeModel({ model: modelName });
 const ttsModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-tts" });
 
+
 app.use(cors({
-  origin: true,              // allow same-origin
-  credentials: true          // allow cookies/sessions
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
+
 
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
@@ -67,53 +71,27 @@ app.use(fileUpload({
 }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-
-// app.use(session({
-//     secret: process.env.SESSION_SECRET || 'supersecretkey',
-//     resave: false,
-//     saveUninitialized: false,
-//     store: MongoStore.create({
-//         mongoUrl: MONGO_URI,
-//         collectionName: 'sessions',
-//         ttl: 24 * 60 * 60
-//     }),
-//     cookie: {
-//   maxAge: 1000 * 60 * 60 * 24,
-//   httpOnly: true,
-//   secure: process.env.NODE_ENV === 'production',
-//   sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax'  
-// }}));
-
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'supersecretkey',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: MONGO_URI,
-    collectionName: 'sessions',
-    ttl: 24 * 60 * 60
-  }),
-
-  // this is for local development with HTTP
-//   In production with HTTPS, use the settings below and ensure your site is served over HTTPS
-//   cookie: {
-//     maxAge: 1000 * 60 * 60 * 24,
-//     httpOnly: true,
-//     // The critical part:
-//     secure: false,      // For localhost HTTP, must be false!
-//     sameSite: 'Lax'     // For localhost testing and most HTTPS deployments
-//   }
-
-// this is for production with HTTPS
-
-  cookie: {
-  maxAge: 1000 * 60 * 60 * 24,
-  httpOnly: true,
-  secure: true,         // Must be true for HTTPS!
-  sameSite: 'None'      // Must be None for cross-origin cookies
-}
+    secret: process.env.SESSION_SECRET || 'supersecretkey',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: MONGO_URI,
+        collectionName: 'sessions',
+        ttl: 24 * 60 * 60
+    }),
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    
+    },
+    proxy: true
 }));
 
+
+app.enable('trust proxy');
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -230,10 +208,26 @@ app.post('/login', (req, res, next) => {
                 console.error('Login session error:', err);
                 return res.status(500).json({ error: 'Could not log in user.' });
             }
-            res.status(200).json({ message: 'Login successful!', redirectTo: '/upload' });
+            
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    return res.status(500).json({ error: 'Could not save session.' });
+                }
+                console.log('✅ Login successful for user:', user.username);
+                res.status(200).json({ 
+                    message: 'Login successful!', 
+                    redirectTo: '/upload',
+                    user: { 
+                        id: user.id, 
+                        username: user.username 
+                    }
+                });
+            });
         });
     })(req, res, next);
 });
+
 
 app.get('/logout', (req, res, next) => {
     req.logout((err) => {
