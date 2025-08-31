@@ -24,8 +24,8 @@ An intelligent book reading companion that allows you to chat with AI about your
 MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/talkwithme
 GEMINI_API_KEY=your_gemini_api_key_here
 SESSION_SECRET=your_secure_session_secret_here
-PORT=3001
 NODE_ENV=production
+CORS_ORIGIN= empty
 ```
 
 ### Deploy Steps
